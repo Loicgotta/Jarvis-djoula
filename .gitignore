@@ -1,0 +1,76 @@
+# Fichiers d'environnement et secrets
+.env
+*.env
+.env.local
+.env.*.local
+
+# Dossiers de base de données et cache
+chroma_db/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Fichiers audio générés
+audio_outputs/
+uploads/
+*.mp3
+*.wav
+*.m4a
+*.webm
+
+# Environnements virtuels Python
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE et éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+docs/_build/
+
+# Fichiers temporaires
+*.tmp
+*.bak
+*.orig
+temp/
+tmp/
