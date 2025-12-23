@@ -22,19 +22,32 @@ class VoiceInterface:
         """
         Convertit un fichier audio en texte en utilisant Whisper d'OpenAI
 
+        IMPORTANT: Conçu pour transcrire phonétiquement le dioula en caractères français.
+        L'utilisateur parle en dioula, mais Whisper transcrit les SONS avec l'alphabet français.
+
         Args:
             audio_file_path: Chemin vers le fichier audio
-            language: Langue de l'audio (par défaut: français)
+            language: Langue de l'audio (par défaut: français pour transcription phonétique)
 
         Returns:
-            Texte transcrit
+            Texte transcrit phonétiquement
         """
         try:
             with open(audio_file_path, "rb") as audio_file:
+                # Prompt spécial pour forcer la transcription phonétique du dioula
+                phonetic_prompt = (
+                    "L'utilisateur parle en dioula. "
+                    "Transcris phonétiquement ce que tu entends en utilisant l'alphabet français, "
+                    "même si ce n'est pas du français. "
+                    "Écris exactement les sons tels qu'ils sont prononcés. "
+                    "Exemples: 'ka', 'ni sogoma', 'baara', 'an be', 'i ni ce'"
+                )
+
                 transcript = self.client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_file,
                     language=language,
+                    prompt=phonetic_prompt,
                     response_format="text"
                 )
 
