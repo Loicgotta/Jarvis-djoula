@@ -5,10 +5,40 @@ Jarvis est un agent IA intelligent conçu pour enseigner la langue dioula. Il ut
 ## 🌟 Fonctionnalités
 
 - **🎤 Interface Vocale**: Parlez en dioula, Jarvis vous répond
+- **🧠 Matching Phonétique Intelligent**: Reconnaissance et analyse des sons dioula
 - **📚 Base de Connaissances RAG**: Accès au dictionnaire dioula complet
 - **🔊 Synthèse Vocale**: Réponses avec prononciation phonétique correcte (voix Alloy)
 - **📝 Mode Texte**: Possibilité d'écrire au lieu de parler
 - **🎯 Enseignement Personnalisé**: Jarvis adapte ses réponses à votre niveau
+
+## 🎯 Comment ça marche ? (Système de Matching Phonétique)
+
+Jarvis utilise un système innovant en **3 étapes** :
+
+### 1️⃣ **Capture Phonétique** (Speech-to-Text)
+Vous parlez en dioula → Whisper transcrit les SONS avec l'alphabet français
+
+**Exemple:**
+- Vous dites: "I ni sɔgɔma" 🗣️
+- Whisper entend et écrit: "ni sogoma" ✍️
+
+### 2️⃣ **Analyse Phonétique** (Agent IA)
+Jarvis analyse la transcription et cherche TOUTES les correspondances possibles dans le dictionnaire
+
+**Jarvis pense:**
+- "sogoma" peut être: **sɔgɔma** (matin), **sɔ̀gɔ̀mà** (percer)
+- "ni" peut être: **ni** (et/avec/quand), **nǐ** (offrir)
+- Contexte probable: salutation → **"I ni sɔgɔma"** (Bonjour)
+
+### 3️⃣ **Réponse Contextualisée** (Text-to-Speech)
+Jarvis répond en dioula avec:
+- ✅ Le mot correct avec accents et tons
+- ✅ La prononciation phonétique claire
+- ✅ Des exemples d'usage
+- 🔊 Audio avec la bonne prononciation
+
+**Pourquoi ce système ?**
+Le dioula utilise des **tons** (à, á, ǎ) et des **voyelles spéciales** (ɔ, ɛ, ɲ) que la reconnaissance vocale standard ne capte pas. Notre système fait le pont entre ce que vous dites et l'orthographe correcte du dioula !
 
 ## 🏗️ Architecture
 
