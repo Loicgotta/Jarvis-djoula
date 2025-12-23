@@ -7,7 +7,7 @@ from typing import List, Dict
 import chromadb
 from chromadb.config import Settings
 from langchain_openai import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import CharacterTextSplitter
 from dioula_dictionary import get_dictionary_entries
 from dotenv import load_dotenv
