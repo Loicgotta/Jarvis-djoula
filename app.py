@@ -266,6 +266,36 @@ async def read_root():
                 justify-content: center;
                 margin-top: 20px;
             }
+
+            .recording {
+                animation: pulse 1.5s infinite;
+            }
+
+            @keyframes pulse {
+                0%, 100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+                50% {
+                    transform: scale(1.1);
+                    opacity: 0.7;
+                }
+            }
+
+            .record-dot {
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                background-color: #dc3545;
+                border-radius: 50%;
+                margin-right: 8px;
+                animation: blink 1s infinite;
+            }
+
+            @keyframes blink {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+            }
         </style>
     </head>
     <body>
@@ -285,9 +315,26 @@ async def read_root():
             </div>
 
             <div class="section">
-                <h3>Option 1: Parler avec Jarvis (Audio)</h3>
+                <h3>Option 1A: Enregistrer votre voix directement 🎙️</h3>
+                <div style="text-align: center; padding: 30px; background: #f8f9fa; border-radius: 15px;">
+                    <div class="icon" id="recordIcon">🎤</div>
+                    <p id="recordStatus" style="color: #666; margin-bottom: 20px;">Cliquez pour commencer l'enregistrement</p>
+                    <div class="button-group">
+                        <button class="btn" id="recordBtn">🎙️ Enregistrer</button>
+                        <button class="btn" id="stopBtn" style="display: none; background: #dc3545;">⏹️ Arrêter</button>
+                        <button class="btn" id="sendRecordingBtn" style="display: none;">📤 Envoyer à Jarvis</button>
+                    </div>
+                    <div id="recordingTime" style="display: none; margin-top: 15px; font-size: 1.5em; color: #667eea;">
+                        <span id="timeDisplay">00:00</span>
+                    </div>
+                    <audio id="recordingPreview" controls style="display: none; margin-top: 20px; width: 100%;"></audio>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Option 1B: Ou uploader un fichier audio</h3>
                 <div class="upload-area" id="uploadArea">
-                    <div class="icon">🎤</div>
+                    <div class="icon">📁</div>
                     <p style="font-size: 1.2em; margin-bottom: 10px;">Cliquez pour sélectionner un fichier audio</p>
                     <p style="color: #666; font-size: 0.9em;">ou glissez-déposez votre fichier ici</p>
                     <p style="color: #999; font-size: 0.8em; margin-top: 10px;">Formats acceptés: MP3, WAV, M4A, WEBM</p>
@@ -335,7 +382,22 @@ async def read_root():
             const result = document.getElementById('result');
             const textInput = document.getElementById('textInput');
 
+            // Voice recording elements
+            const recordBtn = document.getElementById('recordBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const sendRecordingBtn = document.getElementById('sendRecordingBtn');
+            const recordIcon = document.getElementById('recordIcon');
+            const recordStatus = document.getElementById('recordStatus');
+            const recordingTime = document.getElementById('recordingTime');
+            const timeDisplay = document.getElementById('timeDisplay');
+            const recordingPreview = document.getElementById('recordingPreview');
+
             let selectedFile = null;
+            let mediaRecorder = null;
+            let audioChunks = [];
+            let recordedBlob = null;
+            let recordingTimer = null;
+            let recordingSeconds = 0;
 
             // Upload area events
             uploadArea.addEventListener('click', () => fileInput.click());
@@ -407,6 +469,115 @@ async def read_root():
                 } finally {
                     loading.classList.remove('show');
                     submitBtn.disabled = false;
+                }
+            });
+
+            // Voice Recording Functions
+            recordBtn.addEventListener('click', async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    recordingSeconds = 0;
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(recordedBlob);
+                        recordingPreview.src = audioUrl;
+                        recordingPreview.style.display = 'block';
+
+                        // Stop all tracks
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+
+                    // Update UI
+                    recordBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-block';
+                    recordIcon.classList.add('recording');
+                    recordStatus.innerHTML = '<span class="record-dot"></span>Enregistrement en cours...';
+                    recordingTime.style.display = 'block';
+
+                    // Start timer
+                    recordingTimer = setInterval(() => {
+                        recordingSeconds++;
+                        const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+                        const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+                        timeDisplay.textContent = `${mins}:${secs}`;
+                    }, 1000);
+
+                } catch (error) {
+                    alert('Erreur: Impossible d\'accéder au microphone. Vérifiez vos permissions.');
+                    console.error('Error accessing microphone:', error);
+                }
+            });
+
+            stopBtn.addEventListener('click', () => {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+
+                    // Update UI
+                    stopBtn.style.display = 'none';
+                    recordBtn.style.display = 'inline-block';
+                    sendRecordingBtn.style.display = 'inline-block';
+                    recordIcon.classList.remove('recording');
+                    recordStatus.textContent = 'Enregistrement terminé! Écoutez et envoyez à Jarvis.';
+
+                    // Stop timer
+                    clearInterval(recordingTimer);
+                }
+            });
+
+            sendRecordingBtn.addEventListener('click', async () => {
+                if (!recordedBlob) {
+                    alert('Aucun enregistrement disponible');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', recordedBlob, 'recording.webm');
+
+                loading.classList.add('show');
+                result.classList.remove('show');
+                sendRecordingBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/process-audio', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        document.getElementById('transcriptText').textContent = data.transcript;
+                        document.getElementById('responseText').textContent = data.response;
+                        document.getElementById('audioPlayer').src = '/audio/' + data.audio_file;
+
+                        result.classList.add('show');
+
+                        // Reset recording UI
+                        recordingPreview.style.display = 'none';
+                        sendRecordingBtn.style.display = 'none';
+                        recordedBlob = null;
+                        recordingSeconds = 0;
+                        timeDisplay.textContent = '00:00';
+                        recordingTime.style.display = 'none';
+                        recordStatus.textContent = 'Cliquez pour commencer l\'enregistrement';
+                    } else {
+                        alert('Erreur: ' + data.detail);
+                    }
+                } catch (error) {
+                    alert('Erreur de connexion: ' + error.message);
+                } finally {
+                    loading.classList.remove('show');
+                    sendRecordingBtn.disabled = false;
                 }
             });
 
