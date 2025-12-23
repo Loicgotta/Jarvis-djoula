@@ -135,7 +135,7 @@ Commence maintenant en saluant l'élève et en expliquant ton rôle!"""
 
         # Appeler l'API OpenAI
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=messages,
             temperature=0.7,
             max_tokens=500
