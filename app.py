@@ -513,8 +513,8 @@ async def read_root():
                     }, 1000);
 
                 } catch (error) {
-                    alert('Erreur: Impossible d\'accéder au microphone. Vérifiez vos permissions.');
-                    console.error('Error accessing microphone:', error);
+                    alert("Erreur: Impossible d'accéder au microphone. Vérifiez vos permissions.");
+                    console.error("Error accessing microphone:", error);
                 }
             });
 
@@ -569,7 +569,7 @@ async def read_root():
                         recordingSeconds = 0;
                         timeDisplay.textContent = '00:00';
                         recordingTime.style.display = 'none';
-                        recordStatus.textContent = 'Cliquez pour commencer l\'enregistrement';
+                        recordStatus.textContent = "Cliquez pour commencer l'enregistrement";
                     } else {
                         alert('Erreur: ' + data.detail);
                     }
