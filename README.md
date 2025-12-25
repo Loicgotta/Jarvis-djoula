@@ -1,248 +1,286 @@
-# 🎓 Jarvis - Professeur de Dioula avec IA
+# 🇲🇱 Jarvis - Assistant Vocal Bambara
 
-Jarvis est un agent IA intelligent conçu pour enseigner la langue dioula. Il utilise un système RAG (Retrieval-Augmented Generation) basé sur un dictionnaire dioula complet, et offre une interface vocale naturelle grâce aux technologies d'OpenAI.
+Assistant vocal intelligent pour la langue bambara, utilisant Djelia AI pour la reconnaissance vocale et ElevenLabs pour les conversations naturelles.
 
-## 🌟 Fonctionnalités
+## 🎯 Fonctionnalités
 
-- **🎤 Interface Vocale**: Parlez en dioula, Jarvis vous répond
-- **🧠 Matching Phonétique Intelligent**: Reconnaissance et analyse des sons dioula
-- **📚 Base de Connaissances RAG**: Accès au dictionnaire dioula complet
-- **🔊 Synthèse Vocale**: Réponses avec prononciation phonétique correcte (voix Alloy)
-- **📝 Mode Texte**: Possibilité d'écrire au lieu de parler
-- **🎯 Enseignement Personnalisé**: Jarvis adapte ses réponses à votre niveau
-
-## 🎯 Comment ça marche ? (Système de Matching Phonétique)
-
-Jarvis utilise un système innovant en **3 étapes** :
-
-### 1️⃣ **Capture Phonétique** (Speech-to-Text)
-Vous parlez en dioula → Whisper transcrit les SONS avec l'alphabet français
-
-**Exemple:**
-- Vous dites: "I ni sɔgɔma" 🗣️
-- Whisper entend et écrit: "ni sogoma" ✍️
-
-### 2️⃣ **Analyse Phonétique** (Agent IA)
-Jarvis analyse la transcription et cherche TOUTES les correspondances possibles dans le dictionnaire
-
-**Jarvis pense:**
-- "sogoma" peut être: **sɔgɔma** (matin), **sɔ̀gɔ̀mà** (percer)
-- "ni" peut être: **ni** (et/avec/quand), **nǐ** (offrir)
-- Contexte probable: salutation → **"I ni sɔgɔma"** (Bonjour)
-
-### 3️⃣ **Réponse Contextualisée** (Text-to-Speech)
-Jarvis répond en dioula avec:
-- ✅ Le mot correct avec accents et tons
-- ✅ La prononciation phonétique claire
-- ✅ Des exemples d'usage
-- 🔊 Audio avec la bonne prononciation
-
-**Pourquoi ce système ?**
-Le dioula utilise des **tons** (à, á, ǎ) et des **voyelles spéciales** (ɔ, ɛ, ɲ) que la reconnaissance vocale standard ne capte pas. Notre système fait le pont entre ce que vous dites et l'orthographe correcte du dioula !
+- **🎤 Reconnaissance vocale bambara** : Transcription audio native en bambara via Djelia AI
+- **🤖 Agent conversationnel** : Réponses intelligentes via ElevenLabs
+- **🔊 Réponses vocales** : Audio de haute qualité
+- **🌐 Interface web intuitive** : Enregistrement direct ou upload de fichiers
 
 ## 🏗️ Architecture
 
 ```
-Jarvis-djoula/
-├── app.py                  # Application principale (FastAPI)
-├── jarvis_agent.py         # Agent IA Jarvis
-├── rag_system.py           # Système RAG avec ChromaDB
-├── dioula_dictionary.py    # Base de données du dictionnaire
-├── voice_interface.py      # Interface vocale (STT/TTS)
-├── requirements.txt        # Dépendances Python
-├── .env                    # Variables d'environnement
-└── README.md              # Ce fichier
+Audio bambara (microphone/fichier)
+          ↓
+    Djelia AI (transcription)
+          ↓
+    Agent ElevenLabs (conversation)
+          ↓
+    Réponse (texte + audio)
 ```
 
-## 🚀 Installation
+## 🚀 Démarrage Rapide
 
-### 1. Prérequis
-
-- Python 3.8 ou supérieur
-- pip (gestionnaire de paquets Python)
-- Clé API OpenAI
-
-### 2. Installation des dépendances
+### 1. Installation
 
 ```bash
+# Cloner le projet
+git clone https://github.com/Loicgotta/Jarvis-djoula.git
+cd Jarvis-djoula
+
 # Installer les dépendances
 pip install -r requirements.txt
 ```
 
-### 3. Configuration
-
-Le fichier `.env` est déjà configuré avec la clé API OpenAI. Si vous devez la modifier :
-
-```bash
-# Éditer le fichier .env
-OPENAI_API_KEY=votre_clé_api_ici
-```
-
-## 🎯 Utilisation
-
-### Démarrer l'application
+### 2. Lancement
 
 ```bash
 python app.py
 ```
 
-L'application sera accessible sur : **http://localhost:8000**
+L'application sera disponible sur : **http://localhost:8000**
 
-### Interface Web
+## 📁 Structure du Projet
 
-1. Ouvrez votre navigateur à l'adresse `http://localhost:8000`
-2. Choisissez une option :
-   - **Option 1 - Audio**: Uploadez un fichier audio (MP3, WAV, etc.)
-   - **Option 2 - Texte**: Écrivez directement votre question
-3. Jarvis analyse et répond en dioula avec phonétique
-4. Écoutez la réponse vocale avec la prononciation correcte
-
-### API Endpoints
-
-#### POST `/process-audio`
-Traite un fichier audio et retourne la transcription + réponse de Jarvis
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/process-audio" \
-  -F "file=@votre_audio.mp3"
+```
+Jarvis-djoula/
+├── app.py                          # Application FastAPI principale
+├── djelia_transcription.py         # Module Djelia AI
+├── elevenlabs_agent.py             # Module ElevenLabs
+├── bambara_voice_interface.py      # Interface vocale complète
+├── requirements.txt                # Dépendances Python
+└── README.md                       # Documentation
 ```
 
-**Response:**
-```json
+## 🔧 Modules
+
+### djelia_transcription.py
+Module d'intégration avec l'API Djelia AI pour la transcription vocale en bambara.
+
+**Fonctionnalités :**
+- Transcription audio → texte en bambara
+- Support multi-formats (MP3, WAV, M4A, WEBM, OGG, FLAC)
+- Gestion d'erreurs robuste
+
+**Configuration :**
+- API Endpoint : `https://djelia.cloud/api/v1/models/transcribe`
+- Clé API : `4cc23e20-129b-42a0-af09-ca814e9ac23b`
+
+### elevenlabs_agent.py
+Module d'intégration avec l'agent conversationnel ElevenLabs.
+
+**Fonctionnalités :**
+- Envoi de messages texte à l'agent
+- Récupération des réponses (texte et audio)
+- Téléchargement automatique des fichiers audio
+
+**Configuration :**
+- Agent ID : `agent_7801k3yd7xb4fgfva2r76j2fk9dm`
+- Clé API : `sk_e08a92815b5e911d119065275c82377c0396f3b0b2d80750`
+
+### bambara_voice_interface.py
+Interface vocale complète orchestrant le flux Djelia + ElevenLabs.
+
+**Fonctionnalités :**
+- Traitement de bout en bout
+- Logging détaillé
+- Gestion d'erreurs complète
+
+## 🎨 Interface Web
+
+### Deux Options d'Entrée
+
+**Option 1 : Enregistrement Direct** 🎙️
+1. Cliquez sur "Enregistrer"
+2. Parlez en bambara
+3. Cliquez sur "Arrêter"
+4. Envoyez l'enregistrement
+
+**Option 2 : Upload de Fichier** 📁
+1. Cliquez ou glissez-déposez un fichier audio
+2. Sélectionnez votre fichier bambara
+3. Envoyez
+
+## 📊 Flux de Données
+
+### Requête
+```
+POST /process-audio
+Content-Type: multipart/form-data
+
 {
-  "transcript": "Comment on dit bonjour?",
-  "response": "I ni sɔgɔma (prononciation: i ni so-go-ma) - Bonjour à toi le matin...",
-  "audio_file": "jarvis_response_123456.mp3"
+  file: <fichier_audio_bambara>
 }
 ```
 
-#### POST `/process-text`
-Traite du texte et retourne la réponse de Jarvis
-
-**Request:**
-```bash
-curl -X POST "http://localhost:8000/process-text" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Comment dire merci en dioula?"}'
-```
-
-**Response:**
+### Réponse
 ```json
 {
-  "response": "A ni ce (prononciation: a ni tchè) - Merci...",
-  "audio_file": "jarvis_text_123456.mp3"
+  "transcript": "Texte transcrit en bambara",
+  "response": "Réponse de l'agent",
+  "audio_file": "fichier_audio.mp3"
 }
 ```
 
-#### GET `/audio/{filename}`
-Récupère un fichier audio généré
+## 🔍 Tests
 
-#### GET `/health`
-Vérifie l'état du service
+### Test des Modules Individuels
 
-## 📚 Système RAG
+```bash
+# Test Djelia AI
+python djelia_transcription.py
 
-Le système RAG (Retrieval-Augmented Generation) permet à Jarvis d'accéder à un dictionnaire dioula complet :
+# Test ElevenLabs
+python elevenlabs_agent.py
 
-- **Indexation vectorielle** avec ChromaDB
-- **Embeddings** OpenAI (text-embedding-3-small)
-- **Recherche sémantique** pour trouver les mots et expressions pertinents
-- **Contexte enrichi** pour des réponses précises
+# Test Interface Complète
+python bambara_voice_interface.py
+```
 
-## 🎤 Technologies Vocales
+### Logs
 
-### Speech-to-Text (Whisper)
-- Modèle : `whisper-1` d'OpenAI
-- Supporte le français et le dioula
-- Haute précision de transcription
+Le système affiche des logs détaillés :
+- ✅ Succès
+- ❌ Erreur
+- ⚠️ Avertissement
 
-### Text-to-Speech
-- Modèle : `tts-1` d'OpenAI
-- Voix : **Alloy** (optimisée pour la clarté)
-- Vitesse : 0.9x (pour une meilleure compréhension)
-- Respect de la phonétique dioula
+## 🛠️ API Endpoints
 
-## 🔧 Personnalisation
+### POST /process-audio
+Traite un fichier audio en bambara
 
-### Modifier le prompt système
+**Workflow :**
+1. Transcription avec Djelia AI
+2. Conversation avec ElevenLabs
+3. Retour de la réponse (texte + audio)
 
-Éditez `jarvis_agent.py` ligne 17 pour ajuster le comportement de Jarvis :
+### GET /audio/{filename}
+Récupère un fichier audio de réponse
 
+### GET /health
+Vérification de l'état du service
+
+## 🔐 Configuration
+
+### Clés API
+
+Les clés API sont configurées dans les modules :
+
+**Djelia AI :**
 ```python
-SYSTEM_PROMPT = """Tu es Jarvis, un professeur de dioula...
-[Personnalisez ici]
-"""
+djelia_api_key = "4cc23e20-129b-42a0-af09-ca814e9ac23b"
 ```
 
-### Ajouter des mots au dictionnaire
-
-Éditez `dioula_dictionary.py` et ajoutez vos entrées dans `DIOULA_DICTIONARY`.
-
-### Changer la voix TTS
-
-Dans `voice_interface.py`, modifiez le paramètre `voice` :
-- Options: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`
-
-## 🧪 Tests
-
-### Tester le système RAG
-```bash
-python rag_system.py
+**ElevenLabs :**
+```python
+elevenlabs_api_key = "sk_e08a92815b5e911d119065275c82377c0396f3b0b2d80750"
+elevenlabs_agent_id = "agent_7801k3yd7xb4fgfva2r76j2fk9dm"
 ```
 
-### Tester l'agent Jarvis
-```bash
-python jarvis_agent.py
+> **Note :** En production, stockez les clés dans des variables d'environnement via un fichier `.env`
+
+## 📚 Dépendances
+
+- **FastAPI** : Framework web moderne
+- **Uvicorn** : Serveur ASGI performant
+- **Requests** : Requêtes HTTP pour les APIs externes
+- **Python-dotenv** : Gestion de la configuration
+
+## 🌍 Technologies Utilisées
+
+| Technologie | Usage |
+|------------|-------|
+| **Djelia AI** | Reconnaissance vocale bambara |
+| **ElevenLabs** | Agent conversationnel |
+| **FastAPI** | Backend API |
+| **HTML/CSS/JS** | Interface utilisateur |
+
+## 📋 Formats Audio Supportés
+
+- MP3
+- WAV
+- M4A
+- WEBM
+- OGG
+- FLAC
+
+## 🔄 Flux Technique Détaillé
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Web
+    participant API
+    participant Djelia
+    participant ElevenLabs
+
+    User->>Web: Parle en bambara
+    Web->>API: POST /process-audio
+    API->>Djelia: Transcription audio
+    Djelia-->>API: Texte bambara
+    API->>ElevenLabs: Envoi du texte
+    ElevenLabs-->>API: Réponse (texte + audio)
+    API-->>Web: JSON avec réponse
+    Web-->>User: Affiche texte + joue audio
 ```
 
-### Tester l'interface vocale
-```bash
-python voice_interface.py
-```
+## 🚨 Dépannage
 
-## 📁 Données Générées
+### Problème : Erreur de transcription
+- Vérifiez que la clé API Djelia est valide
+- Assurez-vous que le fichier audio est au bon format
+- Vérifiez votre connexion internet
 
-- `./chroma_db/` - Base de données vectorielle ChromaDB
-- `./audio_outputs/` - Fichiers audio générés par Jarvis
-- `./uploads/` - Fichiers audio uploadés par les utilisateurs
+### Problème : Pas de réponse de l'agent
+- Vérifiez la clé API ElevenLabs
+- Vérifiez l'ID de l'agent
+- Consultez les logs pour plus de détails
 
-## ⚠️ Notes Importantes
+### Problème : Microphone non détecté
+- Vérifiez les permissions du navigateur
+- Assurez-vous que le navigateur supporte MediaRecorder
+- Utilisez HTTPS ou localhost
 
-1. **Clé API** : Ne partagez jamais votre clé API OpenAI
-2. **Coût** : Les API OpenAI sont payantes (STT, TTS, GPT-4)
-3. **Langues** : Le système est optimisé pour le dioula avec support français
-4. **Phonétique** : Jarvis indique systématiquement la prononciation
+## 📖 Documentation des APIs
+
+### Djelia AI
+- Site web : https://www.djelia.cloud/
+- Première plateforme IA dédiée au bambara
+
+### ElevenLabs
+- Documentation : https://elevenlabs.io/docs/conversational-ai/overview
+- API Reference : https://elevenlabs.io/docs/api-reference/introduction
 
 ## 🤝 Contribution
 
-Ce projet est conçu pour l'enseignement du dioula. Les contributions sont les bienvenues !
+Les contributions sont les bienvenues ! Pour contribuer :
 
-## 📄 Licence
+1. Fork le projet
+2. Créez une branche (`git checkout -b feature/AmazingFeature`)
+3. Committez vos changements (`git commit -m 'Add AmazingFeature'`)
+4. Pushez vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrez une Pull Request
 
-Ce projet est fourni à des fins éducatives.
+## 📝 License
 
-## 🆘 Support
+Ce projet est sous licence MIT.
 
-En cas de problème :
-1. Vérifiez que votre clé API OpenAI est valide
-2. Assurez-vous que toutes les dépendances sont installées
-3. Consultez les logs dans le terminal
+## 🙏 Remerciements
 
-## 🎓 Exemples d'Utilisation
+- **Djelia AI** pour la reconnaissance vocale bambara de pointe
+- **ElevenLabs** pour l'agent conversationnel de haute qualité
+- La communauté open source
 
-### Apprendre les salutations
-**Vous**: "Comment on dit bonjour le matin?"
-**Jarvis**: "I ni sɔgɔma (prononciation: i ni so-go-ma) - c'est comme ça qu'on dit bonjour le matin en dioula..."
+## 📧 Contact
 
-### Apprendre du vocabulaire
-**Vous**: "Comment on dit 'travail'?"
-**Jarvis**: "Baara (prononciation: ba-ra) - c'est le mot pour travail..."
-
-### Pratiquer la conversation
-**Vous**: "I ni ce!"
-**Jarvis**: "I ni ce fana! (prononciation: i ni tchè fa-na) - Merci à toi aussi..."
+Pour toute question ou suggestion :
+- Créez une issue sur GitHub
+- Consultez la documentation
 
 ---
 
-**Développé avec ❤️ pour l'apprentissage du dioula**
+**Version :** 1.0.0
+**Date :** 2025-12-25
+**Status :** ✅ Production Ready

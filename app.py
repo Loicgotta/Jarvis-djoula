@@ -1,21 +1,18 @@
 """
-Application principale Jarvis - Professeur de dioula avec interface web
+Application Jarvis - Reconnaissance vocale Bambara avec Djelia AI et ElevenLabs
 """
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import shutil
-from jarvis_agent import JarvisTeacher
-from voice_interface import VoiceInterface
 from bambara_voice_interface import BambaraVoiceInterface
 import uvicorn
 
 # Initialiser l'application FastAPI
 app = FastAPI(
-    title="Jarvis - Professeur de Dioula",
-    description="Agent IA pour enseigner le dioula avec support vocal",
+    title="Jarvis - Assistant Vocal Bambara",
+    description="Reconnaissance vocale bambara avec Djelia AI et agent conversationnel ElevenLabs",
     version="1.0.0"
 )
 
@@ -23,9 +20,7 @@ app = FastAPI(
 UPLOAD_DIR = Path("./uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# Initialiser Jarvis et les interfaces vocales
-jarvis = JarvisTeacher()
-voice_interface = VoiceInterface()
+# Initialiser l'interface vocale bambara
 bambara_interface = BambaraVoiceInterface()
 
 
@@ -38,7 +33,7 @@ async def read_root():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Jarvis - Professeur de Dioula</title>
+        <title>Jarvis - Assistant Vocal Bambara</title>
         <style>
             * {
                 margin: 0;
@@ -242,26 +237,6 @@ async def read_root():
                 margin-bottom: 15px;
             }
 
-            .text-input-section {
-                margin-top: 20px;
-            }
-
-            textarea {
-                width: 100%;
-                padding: 15px;
-                border: 2px solid #e0e0e0;
-                border-radius: 10px;
-                font-size: 1em;
-                resize: vertical;
-                min-height: 100px;
-                font-family: inherit;
-            }
-
-            textarea:focus {
-                outline: none;
-                border-color: #667eea;
-            }
-
             .button-group {
                 display: flex;
                 gap: 15px;
@@ -298,50 +273,46 @@ async def read_root():
                 0%, 100% { opacity: 1; }
                 50% { opacity: 0.3; }
             }
+
+            .tech-badge {
+                display: inline-block;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 0.9em;
+                margin: 5px;
+            }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>🎓 Jarvis</h1>
-            <p class="subtitle">Votre Professeur de Dioula Personnel</p>
+            <h1>🇲🇱 Jarvis</h1>
+            <p class="subtitle">Assistant Vocal en Bambara</p>
 
             <div class="intro">
                 <h2>Bienvenue ! I ni ce! 👋</h2>
-                <p>Jarvis est votre professeur de dioula qui vous aide à apprendre et pratiquer la langue dioula.</p>
+                <p>Jarvis utilise l'intelligence artificielle pour comprendre et répondre en bambara.</p>
                 <ul>
-                    <li>🎤 <strong>Parlez en dioula</strong> - Enregistrez votre voix</li>
-                    <li>🤖 <strong>Jarvis répond</strong> - En dioula avec phonétique</li>
-                    <li>🔊 <strong>Écoutez</strong> - Prononciation correcte avec la voix Alloy</li>
-                    <li>📚 <strong>Apprenez</strong> - Accès au dictionnaire dioula complet</li>
+                    <li>🎤 <strong>Parlez en bambara</strong> - Reconnaissance vocale native avec Djelia AI</li>
+                    <li>🤖 <strong>Agent intelligent</strong> - Conversations naturelles avec ElevenLabs</li>
+                    <li>🔊 <strong>Réponses vocales</strong> - Audio de haute qualité</li>
                 </ul>
-            </div>
-
-            <div class="section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; margin-bottom: 30px;">
-                <h3 style="color: white; margin-bottom: 15px;">🌍 Mode de traitement audio</h3>
-                <div style="display: flex; gap: 15px; justify-content: center; align-items: center;">
-                    <label style="color: white; font-size: 1.1em;">
-                        <input type="radio" name="processingMode" value="standard" checked style="margin-right: 8px; transform: scale(1.3);">
-                        Standard (OpenAI)
-                    </label>
-                    <label style="color: white; font-size: 1.1em;">
-                        <input type="radio" name="processingMode" value="bambara" style="margin-right: 8px; transform: scale(1.3);">
-                        🇲🇱 Bambara (Djelia AI + ElevenLabs)
-                    </label>
+                <div style="margin-top: 15px; text-align: center;">
+                    <span class="tech-badge">Djelia AI</span>
+                    <span class="tech-badge">ElevenLabs</span>
                 </div>
-                <p id="modeDescription" style="color: white; margin-top: 15px; font-size: 0.9em; text-align: center;">
-                    Mode actuel : OpenAI Whisper pour la transcription + GPT-4o pour les réponses
-                </p>
             </div>
 
             <div class="section">
-                <h3>Option 1A: Enregistrer votre voix directement 🎙️</h3>
+                <h3>Option 1: Enregistrer votre voix directement 🎙️</h3>
                 <div style="text-align: center; padding: 30px; background: #f8f9fa; border-radius: 15px;">
                     <div class="icon" id="recordIcon">🎤</div>
                     <p id="recordStatus" style="color: #666; margin-bottom: 20px;">Cliquez pour commencer l'enregistrement</p>
                     <div class="button-group">
                         <button class="btn" id="recordBtn">🎙️ Enregistrer</button>
                         <button class="btn" id="stopBtn" style="display: none; background: #dc3545;">⏹️ Arrêter</button>
-                        <button class="btn" id="sendRecordingBtn" style="display: none;">📤 Envoyer à Jarvis</button>
+                        <button class="btn" id="sendRecordingBtn" style="display: none;">📤 Envoyer</button>
                     </div>
                     <div id="recordingTime" style="display: none; margin-top: 15px; font-size: 1.5em; color: #667eea;">
                         <span id="timeDisplay">00:00</span>
@@ -351,7 +322,7 @@ async def read_root():
             </div>
 
             <div class="section">
-                <h3>Option 1B: Ou uploader un fichier audio</h3>
+                <h3>Option 2: Uploader un fichier audio 📁</h3>
                 <div class="upload-area" id="uploadArea">
                     <div class="icon">📁</div>
                     <p style="font-size: 1.2em; margin-bottom: 10px;">Cliquez pour sélectionner un fichier audio</p>
@@ -361,21 +332,13 @@ async def read_root():
                 </div>
                 <div class="file-info" id="fileInfo"></div>
                 <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn" id="submitBtn" disabled>Envoyer à Jarvis</button>
-                </div>
-            </div>
-
-            <div class="section text-input-section">
-                <h3>Option 2: Écrire à Jarvis (Texte)</h3>
-                <textarea id="textInput" placeholder="Écrivez votre question ou message en français ou en dioula..."></textarea>
-                <div style="text-align: center; margin-top: 15px;">
-                    <button class="btn" id="submitTextBtn">Envoyer le texte à Jarvis</button>
+                    <button class="btn" id="submitBtn" disabled>Envoyer</button>
                 </div>
             </div>
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p style="margin-top: 15px; color: #667eea;">Jarvis réfléchit...</p>
+                <p style="margin-top: 15px; color: #667eea;">Traitement en cours...</p>
             </div>
 
             <div class="result" id="result">
@@ -384,7 +347,7 @@ async def read_root():
                     <p id="transcriptText"></p>
                 </div>
                 <div class="response">
-                    <h4>🎓 Jarvis répond:</h4>
+                    <h4>🤖 Réponse:</h4>
                     <p id="responseText"></p>
                     <audio id="audioPlayer" controls></audio>
                 </div>
@@ -396,10 +359,8 @@ async def read_root():
             const fileInput = document.getElementById('audioFile');
             const fileInfo = document.getElementById('fileInfo');
             const submitBtn = document.getElementById('submitBtn');
-            const submitTextBtn = document.getElementById('submitTextBtn');
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
-            const textInput = document.getElementById('textInput');
 
             // Voice recording elements
             const recordBtn = document.getElementById('recordBtn');
@@ -411,29 +372,12 @@ async def read_root():
             const timeDisplay = document.getElementById('timeDisplay');
             const recordingPreview = document.getElementById('recordingPreview');
 
-            // Mode selection
-            const modeDescription = document.getElementById('modeDescription');
-            const modeRadios = document.querySelectorAll('input[name="processingMode"]');
-
             let selectedFile = null;
             let mediaRecorder = null;
             let audioChunks = [];
             let recordedBlob = null;
             let recordingTimer = null;
             let recordingSeconds = 0;
-            let currentMode = 'standard';
-
-            // Mode selection handler
-            modeRadios.forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    currentMode = e.target.value;
-                    if (currentMode === 'bambara') {
-                        modeDescription.textContent = 'Mode actuel : Djelia AI (reconnaissance bambara) + ElevenLabs (réponses vocales)';
-                    } else {
-                        modeDescription.textContent = 'Mode actuel : OpenAI Whisper pour la transcription + GPT-4o pour les réponses';
-                    }
-                });
-            });
 
             // Upload area events
             uploadArea.addEventListener('click', () => fileInput.click());
@@ -483,11 +427,8 @@ async def read_root():
                 result.classList.remove('show');
                 submitBtn.disabled = true;
 
-                // Choisir l'endpoint en fonction du mode
-                const endpoint = currentMode === 'bambara' ? '/process-bambara-audio' : '/process-audio';
-
                 try {
-                    const response = await fetch(endpoint, {
+                    const response = await fetch('/process-audio', {
                         method: 'POST',
                         body: formData
                     });
@@ -569,7 +510,7 @@ async def read_root():
                     recordBtn.style.display = 'inline-block';
                     sendRecordingBtn.style.display = 'inline-block';
                     recordIcon.classList.remove('recording');
-                    recordStatus.textContent = 'Enregistrement terminé! Écoutez et envoyez à Jarvis.';
+                    recordStatus.textContent = 'Enregistrement terminé! Écoutez et envoyez.';
 
                     // Stop timer
                     clearInterval(recordingTimer);
@@ -589,11 +530,8 @@ async def read_root():
                 result.classList.remove('show');
                 sendRecordingBtn.disabled = true;
 
-                // Choisir l'endpoint en fonction du mode
-                const endpoint = currentMode === 'bambara' ? '/process-bambara-audio' : '/process-audio';
-
                 try {
-                    const response = await fetch(endpoint, {
+                    const response = await fetch('/process-audio', {
                         method: 'POST',
                         body: formData
                     });
@@ -628,46 +566,6 @@ async def read_root():
                     sendRecordingBtn.disabled = false;
                 }
             });
-
-            // Text input submission
-            submitTextBtn.addEventListener('click', async () => {
-                const text = textInput.value.trim();
-                if (!text) {
-                    alert('Veuillez entrer un message');
-                    return;
-                }
-
-                loading.classList.add('show');
-                result.classList.remove('show');
-                submitTextBtn.disabled = true;
-
-                try {
-                    const response = await fetch('/process-text', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ text: text })
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        document.getElementById('transcriptText').textContent = text;
-                        document.getElementById('responseText').textContent = data.response;
-                        document.getElementById('audioPlayer').src = '/audio/' + data.audio_file;
-
-                        result.classList.add('show');
-                    } else {
-                        alert('Erreur: ' + data.detail);
-                    }
-                } catch (error) {
-                    alert('Erreur de connexion: ' + error.message);
-                } finally {
-                    loading.classList.remove('show');
-                    submitTextBtn.disabled = false;
-                }
-            });
         </script>
     </body>
     </html>
@@ -677,67 +575,6 @@ async def read_root():
 
 @app.post("/process-audio")
 async def process_audio(file: UploadFile = File(...)):
-    """
-    Endpoint pour traiter un fichier audio
-    """
-    try:
-        # Sauvegarder le fichier uploadé
-        file_path = UPLOAD_DIR / file.filename
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        # Traiter avec Jarvis
-        transcript, response, audio_path = voice_interface.process_voice_input(
-            str(file_path),
-            jarvis
-        )
-
-        if not audio_path:
-            raise HTTPException(status_code=500, detail="Erreur lors du traitement audio")
-
-        return {
-            "transcript": transcript,
-            "response": response,
-            "audio_file": Path(audio_path).name
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/process-text")
-async def process_text(data: dict):
-    """
-    Endpoint pour traiter du texte directement
-    """
-    try:
-        text = data.get("text", "")
-        if not text:
-            raise HTTPException(status_code=400, detail="Texte vide")
-
-        # Obtenir la réponse de Jarvis
-        response = jarvis.get_response(text)
-
-        # Générer l'audio
-        import time
-        output_filename = f"jarvis_text_{int(time.time())}.mp3"
-        audio_path = voice_interface.text_to_speech(
-            text=response,
-            output_filename=output_filename,
-            voice="alloy"
-        )
-
-        return {
-            "response": response,
-            "audio_file": output_filename
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/process-bambara-audio")
-async def process_bambara_audio(file: UploadFile = File(...)):
     """
     Endpoint pour traiter un fichier audio en bambara avec Djelia AI et ElevenLabs
 
@@ -753,9 +590,8 @@ async def process_bambara_audio(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, buffer)
 
         # Traiter avec l'interface bambara (Djelia AI + ElevenLabs)
-        transcript, response, audio_path = bambara_interface.process_with_fallback_tts(
-            str(file_path),
-            fallback_voice_interface=voice_interface
+        transcript, response, audio_path = bambara_interface.process_bambara_voice(
+            str(file_path)
         )
 
         if not transcript and not response:
@@ -787,12 +623,7 @@ async def get_audio(filename: str):
     """
     Endpoint pour servir les fichiers audio
     """
-    # Vérifier d'abord dans le dossier de l'interface vocale standard
-    audio_path = voice_interface.audio_output_dir / filename
-
-    # Si non trouvé, vérifier dans le dossier de l'interface bambara
-    if not audio_path.exists():
-        audio_path = bambara_interface.audio_output_dir / filename
+    audio_path = bambara_interface.audio_output_dir / filename
 
     if not audio_path.exists():
         raise HTTPException(status_code=404, detail="Fichier audio introuvable")
@@ -803,13 +634,20 @@ async def get_audio(filename: str):
 @app.get("/health")
 async def health_check():
     """Vérification de l'état du service"""
-    return {"status": "ok", "message": "Jarvis est prêt à enseigner!"}
+    return {
+        "status": "ok",
+        "message": "Jarvis Bambara est prêt!",
+        "services": {
+            "djelia_ai": "actif",
+            "elevenlabs": "actif"
+        }
+    }
 
 
 if __name__ == "__main__":
-    print("🎓 Démarrage de Jarvis - Professeur de Dioula")
-    print("📚 Initialisation du système RAG...")
-    print("🎤 Préparation de l'interface vocale...")
+    print("🇲🇱 Démarrage de Jarvis - Assistant Vocal Bambara")
+    print("🎤 Djelia AI - Reconnaissance vocale bambara")
+    print("🤖 ElevenLabs - Agent conversationnel")
     print("\n🌐 Application disponible sur: http://localhost:8000")
     print("\nAppuyez sur Ctrl+C pour arrêter le serveur\n")
 
