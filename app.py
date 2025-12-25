@@ -283,6 +283,71 @@ async def read_root():
                 font-size: 0.9em;
                 margin: 5px;
             }
+
+            .logs {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 10px;
+                display: none;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9em;
+            }
+
+            .logs.show {
+                display: block;
+            }
+
+            .logs h4 {
+                color: #667eea;
+                margin-bottom: 10px;
+            }
+
+            .logs pre {
+                background: white;
+                padding: 15px;
+                border-radius: 8px;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                margin: 0;
+                color: #333;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+
+            .error-box {
+                background: #fff3cd;
+                border-left: 4px solid #ffc107;
+                padding: 15px;
+                margin: 15px 0;
+                border-radius: 8px;
+                display: none;
+            }
+
+            .error-box.show {
+                display: block;
+            }
+
+            .error-box h4 {
+                color: #856404;
+                margin-bottom: 10px;
+            }
+
+            .error-box p {
+                color: #856404;
+                margin: 5px 0;
+            }
+
+            .success-indicator {
+                color: #28a745;
+                font-weight: bold;
+            }
+
+            .error-indicator {
+                color: #dc3545;
+                font-weight: bold;
+            }
         </style>
     </head>
     <body>
@@ -341,6 +406,16 @@ async def read_root():
                 <p style="margin-top: 15px; color: #667eea;">Traitement en cours...</p>
             </div>
 
+            <div class="error-box" id="errorBox">
+                <h4>❌ Erreur détectée</h4>
+                <p id="errorMessage"></p>
+            </div>
+
+            <div class="logs" id="logs">
+                <h4>📋 Logs de traitement</h4>
+                <pre id="logContent"></pre>
+            </div>
+
             <div class="result" id="result">
                 <div class="transcript">
                     <h4>📝 Vous avez dit:</h4>
@@ -361,6 +436,10 @@ async def read_root():
             const submitBtn = document.getElementById('submitBtn');
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
+            const errorBox = document.getElementById('errorBox');
+            const errorMessage = document.getElementById('errorMessage');
+            const logs = document.getElementById('logs');
+            const logContent = document.getElementById('logContent');
 
             // Voice recording elements
             const recordBtn = document.getElementById('recordBtn');
@@ -378,6 +457,34 @@ async def read_root():
             let recordedBlob = null;
             let recordingTimer = null;
             let recordingSeconds = 0;
+
+            // Function to display logs
+            function displayLogs(logText, isError = false) {
+                logContent.textContent = logText;
+                logs.classList.add('show');
+
+                if (isError) {
+                    logContent.style.color = '#dc3545';
+                } else {
+                    logContent.style.color = '#333';
+                }
+            }
+
+            // Function to display error
+            function displayError(error, details = null) {
+                errorMessage.textContent = error;
+                if (details) {
+                    errorMessage.innerHTML += '<br><br><strong>Détails:</strong><br>' + details.replace(/\n/g, '<br>');
+                }
+                errorBox.classList.add('show');
+            }
+
+            // Function to clear all displays
+            function clearDisplays() {
+                result.classList.remove('show');
+                errorBox.classList.remove('show');
+                logs.classList.remove('show');
+            }
 
             // Upload area events
             uploadArea.addEventListener('click', () => fileInput.click());
@@ -424,7 +531,7 @@ async def read_root():
                 formData.append('file', selectedFile);
 
                 loading.classList.add('show');
-                result.classList.remove('show');
+                clearDisplays();
                 submitBtn.disabled = true;
 
                 try {
@@ -435,9 +542,15 @@ async def read_root():
 
                     const data = await response.json();
 
-                    if (response.ok) {
-                        document.getElementById('transcriptText').textContent = data.transcript;
-                        document.getElementById('responseText').textContent = data.response;
+                    // Afficher les logs si disponibles
+                    if (data.error_log) {
+                        displayLogs(data.error_log, data.success === false);
+                    }
+
+                    if (data.success !== false) {
+                        // Succès
+                        document.getElementById('transcriptText').textContent = data.transcript || 'Aucune transcription';
+                        document.getElementById('responseText').textContent = data.response || 'Aucune réponse';
 
                         if (data.audio_file) {
                             document.getElementById('audioPlayer').src = '/audio/' + data.audio_file;
@@ -445,10 +558,12 @@ async def read_root():
 
                         result.classList.add('show');
                     } else {
-                        alert('Erreur: ' + data.detail);
+                        // Erreur
+                        displayError(data.error || 'Une erreur est survenue', data.error_details);
                     }
                 } catch (error) {
-                    alert('Erreur de connexion: ' + error.message);
+                    displayError('Erreur de connexion au serveur', error.message);
+                    displayLogs('Erreur de connexion: ' + error.message, true);
                 } finally {
                     loading.classList.remove('show');
                     submitBtn.disabled = false;
@@ -519,7 +634,7 @@ async def read_root():
 
             sendRecordingBtn.addEventListener('click', async () => {
                 if (!recordedBlob) {
-                    alert('Aucun enregistrement disponible');
+                    displayError('Aucun enregistrement disponible');
                     return;
                 }
 
@@ -527,7 +642,7 @@ async def read_root():
                 formData.append('file', recordedBlob, 'recording.webm');
 
                 loading.classList.add('show');
-                result.classList.remove('show');
+                clearDisplays();
                 sendRecordingBtn.disabled = true;
 
                 try {
@@ -538,9 +653,15 @@ async def read_root():
 
                     const data = await response.json();
 
-                    if (response.ok) {
-                        document.getElementById('transcriptText').textContent = data.transcript;
-                        document.getElementById('responseText').textContent = data.response;
+                    // Afficher les logs si disponibles
+                    if (data.error_log) {
+                        displayLogs(data.error_log, data.success === false);
+                    }
+
+                    if (data.success !== false) {
+                        // Succès
+                        document.getElementById('transcriptText').textContent = data.transcript || 'Aucune transcription';
+                        document.getElementById('responseText').textContent = data.response || 'Aucune réponse';
 
                         if (data.audio_file) {
                             document.getElementById('audioPlayer').src = '/audio/' + data.audio_file;
@@ -557,10 +678,12 @@ async def read_root():
                         recordingTime.style.display = 'none';
                         recordStatus.textContent = "Cliquez pour commencer l'enregistrement";
                     } else {
-                        alert('Erreur: ' + data.detail);
+                        // Erreur
+                        displayError(data.error || 'Une erreur est survenue', data.error_details);
                     }
                 } catch (error) {
-                    alert('Erreur de connexion: ' + error.message);
+                    displayError('Erreur de connexion au serveur', error.message);
+                    displayLogs('Erreur de connexion: ' + error.message, true);
                 } finally {
                     loading.classList.remove('show');
                     sendRecordingBtn.disabled = false;
@@ -583,39 +706,80 @@ async def process_audio(file: UploadFile = File(...)):
     2. Envoi du transcript à l'agent ElevenLabs
     3. Retour de la réponse de l'agent (texte et audio)
     """
+    error_log = []
+
     try:
         # Sauvegarder le fichier uploadé
+        error_log.append(f"📁 Réception du fichier: {file.filename}")
         file_path = UPLOAD_DIR / file.filename
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+        error_log.append(f"✅ Fichier sauvegardé: {file_path}")
 
         # Traiter avec l'interface bambara (Djelia AI + ElevenLabs)
+        error_log.append("🔄 Début du traitement avec Djelia AI et ElevenLabs...")
+
         transcript, response, audio_path = bambara_interface.process_bambara_voice(
             str(file_path)
         )
 
         if not transcript and not response:
-            raise HTTPException(
-                status_code=500,
-                detail="Erreur lors du traitement audio avec Djelia AI"
-            )
+            error_log.append("❌ Aucune transcription ni réponse obtenue")
+            return {
+                "success": False,
+                "transcript": "",
+                "response": "Erreur lors du traitement audio",
+                "audio_file": None,
+                "error_log": "\n".join(error_log),
+                "error": "Aucune transcription ni réponse n'a pu être générée"
+            }
+
+        error_log.append(f"✅ Transcription: {transcript}")
+        error_log.append(f"✅ Réponse générée: {response[:100]}...")
 
         # Préparer la réponse
         result = {
+            "success": True,
             "transcript": transcript,
             "response": response,
+            "error_log": "\n".join(error_log)
         }
 
         # Ajouter le fichier audio si disponible
         if audio_path:
             result["audio_file"] = Path(audio_path).name
+            error_log.append(f"✅ Fichier audio: {result['audio_file']}")
         else:
             result["audio_file"] = None
+            error_log.append("⚠️ Aucun fichier audio généré")
 
+        result["error_log"] = "\n".join(error_log)
         return result
 
+    except HTTPException as he:
+        error_log.append(f"❌ Erreur HTTP: {he.detail}")
+        return {
+            "success": False,
+            "transcript": "",
+            "response": "",
+            "audio_file": None,
+            "error_log": "\n".join(error_log),
+            "error": he.detail
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_details = traceback.format_exc()
+        error_log.append(f"❌ Erreur inattendue: {str(e)}")
+        error_log.append(f"📋 Détails complets:\n{error_details}")
+        return {
+            "success": False,
+            "transcript": "",
+            "response": "",
+            "audio_file": None,
+            "error_log": "\n".join(error_log),
+            "error": str(e),
+            "error_details": error_details
+        }
 
 
 @app.get("/audio/{filename}")
