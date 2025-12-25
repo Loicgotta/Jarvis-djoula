@@ -647,9 +647,13 @@ async def process_audio(file: UploadFile = File(...)):
         if not audio_path:
             raise HTTPException(status_code=500, detail="Erreur lors du traitement audio")
 
+        # Version nettoyée pour Elevenlabs
+        clean_response = jarvis.clean_for_elevenlabs(response)
+
         return {
             "transcript": transcript,
             "response": response,
+            "response_clean": clean_response,  # Pour Elevenlabs
             "audio_file": Path(audio_path).name
         }
 
@@ -670,6 +674,9 @@ async def process_text(data: dict):
         # Obtenir la réponse de Jarvis
         response = jarvis.get_response(text)
 
+        # Version nettoyée pour Elevenlabs
+        clean_response = jarvis.clean_for_elevenlabs(response)
+
         # Générer l'audio
         import time
         output_filename = f"jarvis_text_{int(time.time())}.mp3"
@@ -681,7 +688,33 @@ async def process_text(data: dict):
 
         return {
             "response": response,
+            "response_clean": clean_response,  # Pour Elevenlabs
             "audio_file": output_filename
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/elevenlabs-message")
+async def elevenlabs_message(data: dict):
+    """
+    Endpoint optimisé pour Elevenlabs Conversational AI
+    Retourne uniquement le texte nettoyé sans emojis ni markdown
+    """
+    try:
+        text = data.get("text", "")
+        if not text:
+            raise HTTPException(status_code=400, detail="Texte vide")
+
+        # Obtenir la réponse de Jarvis
+        response = jarvis.get_response(text)
+
+        # Nettoyer pour Elevenlabs
+        clean_response = jarvis.clean_for_elevenlabs(response)
+
+        return {
+            "message": clean_response
         }
 
     except Exception as e:

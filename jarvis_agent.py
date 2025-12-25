@@ -3,6 +3,7 @@ Agent IA Jarvis - Professeur de dioula avec support RAG
 """
 
 import os
+import re
 from typing import Dict, Optional
 from openai import OpenAI
 from rag_system import DioulaRAGSystem
@@ -162,6 +163,43 @@ Commence maintenant en saluant l'élève et en expliquant ton rôle!"""
             "Je suis un nouvel élève qui vient d'arriver",
             use_rag=True
         )
+
+    @staticmethod
+    def clean_for_elevenlabs(text: str) -> str:
+        """
+        Nettoie le texte pour qu'il soit compatible avec Elevenlabs
+        Enlève les emojis, markdown et structure complexe tout en gardant le contenu
+
+        Args:
+            text: Texte brut de Jarvis
+
+        Returns:
+            Texte nettoyé compatible Elevenlabs
+        """
+        # Enlever les emojis
+        text = re.sub(r'[\U00010000-\U0010ffff]', '', text)  # Emojis 4 bytes
+        text = re.sub(r'[\u2600-\u26FF\u2700-\u27BF]', '', text)  # Symboles
+        text = re.sub(r'[👋🎓📝🤖🔊📚✅❌1️⃣2️⃣3️⃣]', '', text)  # Emojis courants
+
+        # Enlever le markdown
+        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)  # Gras
+        text = re.sub(r'\*(.*?)\*', r'\1', text)  # Italique
+        text = re.sub(r'`(.*?)`', r'\1', text)  # Code
+
+        # Enlever les structures de liste numérotées
+        text = re.sub(r'^[0-9]+️⃣\s*', '', text, flags=re.MULTILINE)
+
+        # Enlever les flèches et symboles
+        text = re.sub(r'→', ':', text)
+
+        # Nettoyer les espaces multiples
+        text = re.sub(r'\n\n+', '\n', text)
+        text = re.sub(r'  +', ' ', text)
+
+        # Simplifier les sections
+        text = re.sub(r'##\s*', '', text)
+
+        return text.strip()
 
 
 # Fonction utilitaire pour tester l'agent
