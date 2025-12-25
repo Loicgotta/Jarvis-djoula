@@ -524,9 +524,10 @@ async def read_root():
             }
 
             // Detect browser for better error messages
-            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-            const isChrome = /chrome/i.test(navigator.userAgent) && !/edge/i.test(navigator.userAgent);
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isSafari = userAgent.indexOf('safari') !== -1 && userAgent.indexOf('chrome') === -1;
+            const isFirefox = userAgent.indexOf('firefox') > -1;
+            const isChrome = userAgent.indexOf('chrome') > -1 && userAgent.indexOf('edge') === -1;
 
             console.log('Browser detected:', { isSafari, isFirefox, isChrome });
             console.log('MediaRecorder available:', typeof MediaRecorder !== 'undefined');
