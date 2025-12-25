@@ -486,6 +486,51 @@ async def read_root():
                 logs.classList.remove('show');
             }
 
+            // Function to detect best supported audio format for recording
+            function getSupportedMimeType() {
+                const types = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/ogg;codecs=opus',
+                    'audio/mp4',
+                    'audio/aac',
+                    'audio/mpeg'
+                ];
+
+                for (const type of types) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        console.log('Using audio format:', type);
+                        return type;
+                    }
+                }
+
+                // Fallback - let browser choose
+                console.warn('No preferred audio format supported, using default');
+                return '';
+            }
+
+            // Function to get file extension from MIME type
+            function getFileExtension(mimeType) {
+                const extensions = {
+                    'audio/webm': 'webm',
+                    'audio/webm;codecs=opus': 'webm',
+                    'audio/ogg;codecs=opus': 'ogg',
+                    'audio/ogg': 'ogg',
+                    'audio/mp4': 'mp4',
+                    'audio/aac': 'aac',
+                    'audio/mpeg': 'mp3'
+                };
+                return extensions[mimeType] || 'webm';
+            }
+
+            // Detect browser for better error messages
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+            const isChrome = /chrome/i.test(navigator.userAgent) && !/edge/i.test(navigator.userAgent);
+
+            console.log('Browser detected:', { isSafari, isFirefox, isChrome });
+            console.log('MediaRecorder available:', typeof MediaRecorder !== 'undefined');
+
             // Upload area events
             uploadArea.addEventListener('click', () => fileInput.click());
 
@@ -571,29 +616,82 @@ async def read_root():
             });
 
             // Voice Recording Functions
+            let recordingMimeType = '';
+
             recordBtn.addEventListener('click', async () => {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    // Check if MediaRecorder is supported
+                    if (typeof MediaRecorder === 'undefined') {
+                        const errorMsg = 'Votre navigateur ne supporte pas l\'enregistrement audio.\n' +
+                                       'Veuillez utiliser Chrome, Firefox, Safari (version récente) ou Edge.';
+                        displayError('Enregistrement non supporté', errorMsg);
+                        return;
+                    }
 
-                    mediaRecorder = new MediaRecorder(stream);
+                    // Get the best supported MIME type for this browser
+                    recordingMimeType = getSupportedMimeType();
+
+                    // Request microphone access with better constraints
+                    const constraints = {
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    };
+
+                    console.log('Requesting microphone access...');
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    console.log('Microphone access granted');
+
+                    // Create MediaRecorder with the supported MIME type
+                    const options = recordingMimeType ? { mimeType: recordingMimeType } : {};
+                    mediaRecorder = new MediaRecorder(stream, options);
+
+                    console.log('MediaRecorder created with:', {
+                        mimeType: mediaRecorder.mimeType,
+                        state: mediaRecorder.state
+                    });
+
                     audioChunks = [];
                     recordingSeconds = 0;
 
                     mediaRecorder.ondataavailable = (event) => {
-                        audioChunks.push(event.data);
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                            console.log('Audio chunk received:', event.data.size, 'bytes');
+                        }
                     };
 
                     mediaRecorder.onstop = () => {
-                        recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        console.log('Recording stopped, processing...');
+
+                        // Use the actual MIME type from the recorder
+                        const actualMimeType = mediaRecorder.mimeType;
+                        recordedBlob = new Blob(audioChunks, { type: actualMimeType });
+
+                        console.log('Recorded blob created:', {
+                            size: recordedBlob.size,
+                            type: recordedBlob.type
+                        });
+
                         const audioUrl = URL.createObjectURL(recordedBlob);
                         recordingPreview.src = audioUrl;
                         recordingPreview.style.display = 'block';
 
                         // Stop all tracks
                         stream.getTracks().forEach(track => track.stop());
+                        console.log('Microphone released');
                     };
 
+                    mediaRecorder.onerror = (event) => {
+                        console.error('MediaRecorder error:', event.error);
+                        displayError('Erreur d\'enregistrement', event.error.message);
+                    };
+
+                    // Start recording
                     mediaRecorder.start();
+                    console.log('Recording started');
 
                     // Update UI
                     recordBtn.style.display = 'none';
@@ -611,8 +709,34 @@ async def read_root():
                     }, 1000);
 
                 } catch (error) {
-                    alert("Erreur: Impossible d'accéder au microphone. Vérifiez vos permissions.");
                     console.error("Error accessing microphone:", error);
+
+                    let errorMsg = "Impossible d'accéder au microphone.\n\n";
+
+                    if (error.name === 'NotAllowedError') {
+                        errorMsg += "Vous avez refusé l'accès au microphone.\n\n";
+                        if (isSafari) {
+                            errorMsg += "Sur Safari (Mac):\n" +
+                                      "1. Allez dans Safari > Préférences > Sites web > Microphone\n" +
+                                      "2. Autorisez localhost à accéder au microphone";
+                        } else {
+                            errorMsg += "Veuillez autoriser l'accès au microphone dans les paramètres de votre navigateur.";
+                        }
+                    } else if (error.name === 'NotFoundError') {
+                        errorMsg += "Aucun microphone détecté.\n" +
+                                  "Vérifiez qu'un microphone est connecté et sélectionné dans les préférences système.";
+                    } else if (error.name === 'NotReadableError') {
+                        errorMsg += "Le microphone est déjà utilisé par une autre application.\n" +
+                                  "Fermez les autres applications utilisant le microphone.";
+                    } else {
+                        errorMsg += `Erreur: ${error.message}\n\n` +
+                                  "Assurez-vous que:\n" +
+                                  "- Vous utilisez localhost ou HTTPS\n" +
+                                  "- Votre navigateur est à jour\n" +
+                                  "- Le microphone est correctement configuré";
+                    }
+
+                    displayError("Erreur d'accès au microphone", errorMsg);
                 }
             });
 
@@ -638,8 +762,18 @@ async def read_root():
                     return;
                 }
 
+                // Determine the correct file extension from the blob type
+                const fileExtension = getFileExtension(recordedBlob.type);
+                const fileName = `recording.${fileExtension}`;
+
+                console.log('Sending recording:', {
+                    fileName: fileName,
+                    blobType: recordedBlob.type,
+                    blobSize: recordedBlob.size
+                });
+
                 const formData = new FormData();
-                formData.append('file', recordedBlob, 'recording.webm');
+                formData.append('file', recordedBlob, fileName);
 
                 loading.classList.add('show');
                 clearDisplays();
