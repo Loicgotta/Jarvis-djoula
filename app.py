@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 from jarvis_agent import JarvisTeacher
 from voice_interface import VoiceInterface
+from bambara_voice_interface import BambaraVoiceInterface
 import uvicorn
 
 # Initialiser l'application FastAPI
@@ -22,9 +23,10 @@ app = FastAPI(
 UPLOAD_DIR = Path("./uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# Initialiser Jarvis et l'interface vocale
+# Initialiser Jarvis et les interfaces vocales
 jarvis = JarvisTeacher()
 voice_interface = VoiceInterface()
+bambara_interface = BambaraVoiceInterface()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -314,6 +316,23 @@ async def read_root():
                 </ul>
             </div>
 
+            <div class="section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; margin-bottom: 30px;">
+                <h3 style="color: white; margin-bottom: 15px;">🌍 Mode de traitement audio</h3>
+                <div style="display: flex; gap: 15px; justify-content: center; align-items: center;">
+                    <label style="color: white; font-size: 1.1em;">
+                        <input type="radio" name="processingMode" value="standard" checked style="margin-right: 8px; transform: scale(1.3);">
+                        Standard (OpenAI)
+                    </label>
+                    <label style="color: white; font-size: 1.1em;">
+                        <input type="radio" name="processingMode" value="bambara" style="margin-right: 8px; transform: scale(1.3);">
+                        🇲🇱 Bambara (Djelia AI + ElevenLabs)
+                    </label>
+                </div>
+                <p id="modeDescription" style="color: white; margin-top: 15px; font-size: 0.9em; text-align: center;">
+                    Mode actuel : OpenAI Whisper pour la transcription + GPT-4o pour les réponses
+                </p>
+            </div>
+
             <div class="section">
                 <h3>Option 1A: Enregistrer votre voix directement 🎙️</h3>
                 <div style="text-align: center; padding: 30px; background: #f8f9fa; border-radius: 15px;">
@@ -392,12 +411,29 @@ async def read_root():
             const timeDisplay = document.getElementById('timeDisplay');
             const recordingPreview = document.getElementById('recordingPreview');
 
+            // Mode selection
+            const modeDescription = document.getElementById('modeDescription');
+            const modeRadios = document.querySelectorAll('input[name="processingMode"]');
+
             let selectedFile = null;
             let mediaRecorder = null;
             let audioChunks = [];
             let recordedBlob = null;
             let recordingTimer = null;
             let recordingSeconds = 0;
+            let currentMode = 'standard';
+
+            // Mode selection handler
+            modeRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    currentMode = e.target.value;
+                    if (currentMode === 'bambara') {
+                        modeDescription.textContent = 'Mode actuel : Djelia AI (reconnaissance bambara) + ElevenLabs (réponses vocales)';
+                    } else {
+                        modeDescription.textContent = 'Mode actuel : OpenAI Whisper pour la transcription + GPT-4o pour les réponses';
+                    }
+                });
+            });
 
             // Upload area events
             uploadArea.addEventListener('click', () => fileInput.click());
@@ -447,8 +483,11 @@ async def read_root():
                 result.classList.remove('show');
                 submitBtn.disabled = true;
 
+                // Choisir l'endpoint en fonction du mode
+                const endpoint = currentMode === 'bambara' ? '/process-bambara-audio' : '/process-audio';
+
                 try {
-                    const response = await fetch('/process-audio', {
+                    const response = await fetch(endpoint, {
                         method: 'POST',
                         body: formData
                     });
@@ -458,7 +497,10 @@ async def read_root():
                     if (response.ok) {
                         document.getElementById('transcriptText').textContent = data.transcript;
                         document.getElementById('responseText').textContent = data.response;
-                        document.getElementById('audioPlayer').src = '/audio/' + data.audio_file;
+
+                        if (data.audio_file) {
+                            document.getElementById('audioPlayer').src = '/audio/' + data.audio_file;
+                        }
 
                         result.classList.add('show');
                     } else {
@@ -547,8 +589,11 @@ async def read_root():
                 result.classList.remove('show');
                 sendRecordingBtn.disabled = true;
 
+                // Choisir l'endpoint en fonction du mode
+                const endpoint = currentMode === 'bambara' ? '/process-bambara-audio' : '/process-audio';
+
                 try {
-                    const response = await fetch('/process-audio', {
+                    const response = await fetch(endpoint, {
                         method: 'POST',
                         body: formData
                     });
@@ -558,7 +603,10 @@ async def read_root():
                     if (response.ok) {
                         document.getElementById('transcriptText').textContent = data.transcript;
                         document.getElementById('responseText').textContent = data.response;
-                        document.getElementById('audioPlayer').src = '/audio/' + data.audio_file;
+
+                        if (data.audio_file) {
+                            document.getElementById('audioPlayer').src = '/audio/' + data.audio_file;
+                        }
 
                         result.classList.add('show');
 
@@ -688,12 +736,64 @@ async def process_text(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/process-bambara-audio")
+async def process_bambara_audio(file: UploadFile = File(...)):
+    """
+    Endpoint pour traiter un fichier audio en bambara avec Djelia AI et ElevenLabs
+
+    Workflow:
+    1. Transcription audio avec Djelia AI (reconnaissance vocale bambara)
+    2. Envoi du transcript à l'agent ElevenLabs
+    3. Retour de la réponse de l'agent (texte et audio)
+    """
+    try:
+        # Sauvegarder le fichier uploadé
+        file_path = UPLOAD_DIR / file.filename
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Traiter avec l'interface bambara (Djelia AI + ElevenLabs)
+        transcript, response, audio_path = bambara_interface.process_with_fallback_tts(
+            str(file_path),
+            fallback_voice_interface=voice_interface
+        )
+
+        if not transcript and not response:
+            raise HTTPException(
+                status_code=500,
+                detail="Erreur lors du traitement audio avec Djelia AI"
+            )
+
+        # Préparer la réponse
+        result = {
+            "transcript": transcript,
+            "response": response,
+        }
+
+        # Ajouter le fichier audio si disponible
+        if audio_path:
+            result["audio_file"] = Path(audio_path).name
+        else:
+            result["audio_file"] = None
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/audio/{filename}")
 async def get_audio(filename: str):
     """
     Endpoint pour servir les fichiers audio
     """
+    # Vérifier d'abord dans le dossier de l'interface vocale standard
     audio_path = voice_interface.audio_output_dir / filename
+
+    # Si non trouvé, vérifier dans le dossier de l'interface bambara
+    if not audio_path.exists():
+        audio_path = bambara_interface.audio_output_dir / filename
+
     if not audio_path.exists():
         raise HTTPException(status_code=404, detail="Fichier audio introuvable")
 
